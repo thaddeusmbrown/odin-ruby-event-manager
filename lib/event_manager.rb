@@ -1,6 +1,7 @@
 require 'csv'
 require 'google/apis/civicinfo_v2'
 require 'erb'
+require 'date'
 
 def clean_zipcode(zipcode)
   zipcode.to_s.rjust(5, '0')[0..4]
@@ -8,24 +9,22 @@ end
 
 def clean_phone_number(phone_number)
   phone_number = phone_number.to_s.scan(/\d/).join('')
-  # if the phone number is 10 digits, assume that it is good
   if phone_number.length == 10
     phone_number
-  # if the phone number is 11 digits and the first number is 1, trim the 1 and use the remaining 10 digits
-  elsif phone_number.length == 11 && phone_number.slice(0,1) == '1'
+  elsif phone_number.length == 11 && phone_number.slice(0, 1) == '1'
     phone_number.slice(1, 10)
-  # if the phone number is less than 10 digits, assume that it is a bad number
-  # if the phone number is more than 11 digits, assume that it is a bad number
-  # if the phone number is 11 digits and the first number is not 1, then it is a bad number
   else
     '0000000000'
   end
 end
 
+def clean_date(date)
+  DateTime.strptime(date, '%m/%d/%Y %k:%M')
+end
+
 def legislators_by_zipcode(zip)
   civic_info = Google::Apis::CivicinfoV2::CivicInfoService.new
   civic_info.key = 'AIzaSyClRzDqDh5MsXwnCWi0kOiiBivP6JsSyBw'
-
   begin
     civic_info.representative_info_by_address(
       address: zip,
@@ -62,7 +61,7 @@ contents.each do |row|
   id = row[0]
   name = row[:first_name]
   phone_number = clean_phone_number(row[:homephone])
-  puts phone_number
+  regdate = clean_date(row[:regdate])
 
   zipcode = clean_zipcode(row[:zipcode])
 
@@ -70,5 +69,7 @@ contents.each do |row|
 
   form_letter = erb_template.result(binding)
 
-  save_thank_you_letter(id,form_letter)
+  signup_hour = regdate.hour
+
+  save_thank_you_letter(id, form_letter)
 end
