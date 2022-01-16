@@ -19,7 +19,8 @@ def clean_phone_number(phone_number)
 end
 
 def clean_date(date)
-  DateTime.strptime(date, '%m/%d/%Y %k:%M')
+  date = DateTime.strptime(date, '%m/%d/%Y %k:%M')
+  DateTime.new(date.year + 2000, date.month, date.day, date.hour, date.min, date.offset)
 end
 
 def legislators_by_zipcode(zip)
@@ -70,6 +71,8 @@ contents.each do |row|
   form_letter = erb_template.result(binding)
 
   signup_hour = regdate.hour
+
+  signup_day = regdate.strftime('%a')
 
   save_thank_you_letter(id, form_letter)
 end
